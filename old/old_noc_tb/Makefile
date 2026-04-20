@@ -52,6 +52,7 @@ RAND_READY ?= 100
 SRC_ROUTER ?= -1
 DEST_ROUTER ?= -1
 STRESS_MODE ?= 0
+AGENT_ACTIVE ?= 1
 
 TOPOLOGY = MESH_TORUS
 PL = 32
@@ -85,7 +86,8 @@ sim: tb_compile
 						+PACKETS_COUNT=$(PACKETS_COUNT) \
 						+RAND_READY=$(RAND_READY) \
 						+SRC_ROUTER=$(SRC_ROUTER) \
-						+DEST_ROUTER=$(DEST_ROUTER)
+						+DEST_ROUTER=$(DEST_ROUTER) \
+						+AGENT_ACTIVE=$(AGENT_ACTIVE)
 
 clean:
 	$(RM) modelsim.ini tr_db.log transcript vsim.wlf
@@ -122,4 +124,5 @@ help:
 	@echo   STRESS_MODE=N    - Enable stress mode, every router sends packets (default: 0)
 	@echo   RAND_READY=N%%    - Ready probability (default: 100)
 	@echo   COVERAGE=1       - Enable coverage collection
+	@echo   AGENT_ACTIVE=1   - UVM_ACTIVE/PASSIVE AGENTS (default: 1)
 	@echo ==========================================

@@ -35,9 +35,13 @@ endclass
 
 class base_noc_sample_test #(parameter DATA_WIDTH = 32, ROUTERS_NUM=16) extends uvm_test;
   `uvm_component_utils(base_noc_sample_test#(DATA_WIDTH, ROUTERS_NUM))
+  
   base_noc_env #(DATA_WIDTH, ROUTERS_NUM) env;
+  base_noc_config base_cfg;
+
   function new(string name = "base_noc_sample_test", uvm_component parent=null);
     super.new(name, parent);
+    if(!uvm_config_db#(base_noc_config)::get(null, "", "base_cfg", base_cfg)) `uvm_fatal("CONFIG", "Component was not properly configured");;
   endfunction
 
   function void build_phase(uvm_phase phase);
@@ -45,10 +49,23 @@ class base_noc_sample_test #(parameter DATA_WIDTH = 32, ROUTERS_NUM=16) extends 
     env = base_noc_env#(DATA_WIDTH, ROUTERS_NUM)::type_id::create("env", this);
   endfunction
 
+  task wait_for_done();
+    while (!env.scoreboard.is_done()) begin
+        #1;
+    end
+  endtask
+
   task run_phase(uvm_phase phase);
-    base_noc_sample_sequence#(DATA_WIDTH, ROUTERS_NUM) seq = base_noc_sample_sequence#(DATA_WIDTH, ROUTERS_NUM)::type_id::create("seq");
-    phase.raise_objection(this);
-    seq.start(env.agent.sequencer);
-    phase.drop_objection(this);
+    if (base_cfg.agent_mode == UVM_ACTIVE) begin
+      base_noc_sample_sequence#(DATA_WIDTH, ROUTERS_NUM) seq = base_noc_sample_sequence#(DATA_WIDTH, ROUTERS_NUM)::type_id::create("seq");
+      phase.raise_objection(this);
+      seq.start(env.agent.sequencer);
+      phase.drop_objection(this);
+    end
+    else begin
+      phase.raise_objection(this);
+      wait_for_done();
+      phase.drop_objection(this);
+    end
   endtask
 endclass

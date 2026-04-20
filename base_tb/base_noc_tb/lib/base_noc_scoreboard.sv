@@ -9,6 +9,8 @@ class base_noc_scoreboard #(parameter DATA_WIDTH = 32, ROUTERS_NUM = 16) extends
     int total_input_dropped;
     int total_output_ejected;
     int total_output_stalled;
+
+    int packets_in_flight_count;
     
     int input_accepted_by_router[ROUTERS_NUM];
     int input_dropped_by_router[ROUTERS_NUM];
@@ -23,6 +25,10 @@ class base_noc_scoreboard #(parameter DATA_WIDTH = 32, ROUTERS_NUM = 16) extends
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         clear_all();
+    endfunction
+
+    function bit is_done();
+        return (packets_in_flight_count == 0) && (total_input_accepted > 0);
     endfunction
     
     function void clear_all();
@@ -44,6 +50,7 @@ class base_noc_scoreboard #(parameter DATA_WIDTH = 32, ROUTERS_NUM = 16) extends
             if (t.local_ports[i].valid) begin
                 if (t.is_input) begin
                     if (t.local_ports[i].ready) begin
+                        packets_in_flight_count++;
                         total_input_accepted++;
                         input_accepted_by_router[i]++;
                         `uvm_info("BASE_SCBD", 
@@ -59,6 +66,7 @@ class base_noc_scoreboard #(parameter DATA_WIDTH = 32, ROUTERS_NUM = 16) extends
                 end
                 else begin
                     if (t.local_ports[i].ready) begin
+                        packets_in_flight_count--;
                         total_output_ejected++;
                         output_ejected_by_router[i]++;
                         `uvm_info("BASE_SCBD", 
@@ -66,6 +74,7 @@ class base_noc_scoreboard #(parameter DATA_WIDTH = 32, ROUTERS_NUM = 16) extends
                                             i, t.local_ports[i].data), 
                                   UVM_MEDIUM)
                     end else begin
+                        packets_in_flight_count--;
                         total_output_stalled++;
                         output_stalled_by_router[i]++;
                         `uvm_warning("BASE_SCBD", 
