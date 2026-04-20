@@ -1,0 +1,6 @@
+coverage_db
+work
+*.log
+transcript
+*.wlf
+modelsim.ini
