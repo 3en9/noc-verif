@@ -12,5 +12,5 @@ package base_noc_pkg;
     `include "lib/base_noc_coverage.sv"
     `include "lib/base_noc_env.sv"
 
-    `include "tests/base_noc_sample_test.sv"
+    `include "tests/base_noc_rand_test.sv"
 endpackage

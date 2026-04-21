@@ -7,10 +7,10 @@ module tb_top;
     always #1 clk = ~clk;
 
     `ifdef MESH_TORUS
-    parameter [`CS-1:0] router_X = 2;
-    parameter [`CS-1:0] router_Y = 1;
+    parameter [`CS-1:0] router_X = `MASTER_ROUTER_F;
+    parameter [`CS-1:0] router_Y = `MASTER_ROUTER_S;
     `elsif CIRCULANT
-    parameter [`CS-1:0] router_no = 1;
+    parameter [`CS-1:0] router_no = `MASTER_ROUTER_F;
     `endif
 
     router_if dut_if(clk);

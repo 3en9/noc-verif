@@ -30,6 +30,7 @@ COVERAGE_TYPES = bcestf
 COV_DB = coverage_db
 COVERAGE_FILE = $(COV_DB)/cov.ucdb
 COVERAGE_REPORT_FILE = $(COV_DB)/cov_report.txt
+COVERAGE_HTML_DIR = $(COV_DB)/html
 
 ifeq ($(COVERAGE),1)
     VLOG_COVERAGE_FLAGS = -cover $(COVERAGE_TYPES)
@@ -44,12 +45,16 @@ endif
 #-----------------------------------------------------------------------------
 # Defines
 #-----------------------------------------------------------------------------
+TOPOLOGY = MESH_TORUS
 PL = 32
 CS = 2
 REN = 5
 X = 4
 Y = 4
 RN = 16
+
+MASTER_ROUTER_F ?= 0
+MASTER_ROUTER_S ?= 0
 
 #-----------------------------------------------------------------------------
 # Target selection (router or noc)
@@ -58,16 +63,14 @@ TARGET ?= noc
 
 ifeq ($(TARGET),router)
 	CHILD_TB = $(ROUTER_TB)
-    TEST ?= old_router_sample_test
+    TEST ?= old_router_rand_test
     PACKETS_COUNT ?= 100
     SRC_PORT ?= -1
     DEST_ROUTER ?= -1
-    ROUTERS_NUM ?= 16
     RAND_READY ?= 100
     STRESS_MODE ?= 0
-    TOPOLOGY = MESH_TORUS
     SIM_ARGS = +UVM_TESTNAME=$(TEST) \
-               +ROUTERS_NUM=$(ROUTERS_NUM) \
+               +ROUTERS_NUM=$(RN) \
                +PACKETS_COUNT=$(PACKETS_COUNT) \
                +SRC_PORT=$(SRC_PORT) \
                +DEST_ROUTER=$(DEST_ROUTER) \
@@ -75,14 +78,13 @@ ifeq ($(TARGET),router)
                +STRESS_MODE=$(STRESS_MODE)
 else
 	CHILD_TB = $(NOC_TB)
-    TEST ?= old_noc_sample_test
+    TEST ?= old_noc_rand_test
     PACKETS_COUNT ?= 100
     RAND_READY ?= 100
     SRC_ROUTER ?= -1
     DEST_ROUTER ?= -1
     STRESS_MODE ?= 0
     AGENT_ACTIVE ?= 1
-    TOPOLOGY = MESH_TORUS
     SIM_ARGS = +UVM_TESTNAME=$(TEST) \
                +PACKETS_COUNT=$(PACKETS_COUNT) \
                +RAND_READY=$(RAND_READY) \
@@ -116,7 +118,7 @@ endif
 tb_compile: base_tb_compile
 ifeq ($(TARGET),router)
 	vlog -sv +incdir+$(UVM_SRC) +incdir+$(CHILD_TB) $(CHILD_TB)/old_router_package.sv +define+PL=$(PL) +define+CS=$(CS) +define+REN=$(REN) +define+$(TOPOLOGY) +define+X=$(X) +define+Y=$(Y)
-	vlog -sv $(CHILD_TB)/tb_top.sv +define+$(TOPOLOGY) +define+X=$(X) +define+Y=$(Y) +define+CS=$(CS)
+	vlog -sv $(CHILD_TB)/tb_top.sv +define+$(TOPOLOGY) +define+X=$(X) +define+Y=$(Y) +define+CS=$(CS) +define+MASTER_ROUTER_F=$(MASTER_ROUTER_F) +define+MASTER_ROUTER_S=$(MASTER_ROUTER_S)
 else
 	vlog -sv +incdir+$(UVM_SRC) +incdir+$(CHILD_TB) $(CHILD_TB)/old_noc_package.sv +define+PL=$(PL) +define+CS=$(CS) +define+REN=$(REN) +define+$(TOPOLOGY) +define+X=$(X) +define+Y=$(Y) +define+RN=$(RN)
 	vlog -sv $(CHILD_TB)/tb_top.sv
@@ -136,6 +138,9 @@ view_cov:
 cov_report:
 	vsim -c -do "coverage report -file $(COVERAGE_REPORT_FILE) -lines -code $(COVERAGE_TYPES); quit" -viewcov $(COVERAGE_FILE)
 
+cov_html_report:
+	vsim -c -do "coverage report -html -htmldir $(COVERAGE_HTML_DIR) -code $(COVERAGE_TYPES); quit" -viewcov $(COVERAGE_FILE)
+
 view_wave:
 	vsim -view vsim.wlf -do "add wave -r /tb_top/dut/*"
 
@@ -148,6 +153,7 @@ help:
 	@echo make sim COVERAGE=1      - Run with coverage collection
 	@echo make view_cov            - View coverage results
 	@echo make cov_report          - Generate text coverage report
+	@echo make cov_html_report     - Generate html coverage report
 	@echo make view_wave           - View waveforms
 	@echo make clean               - Clean all generated files
 	@echo ==========================================
@@ -156,7 +162,6 @@ help:
 	@echo   PACKETS_COUNT=N  - Number of packets (default: 100)
 	@echo   SRC_PORT=N       - Source port (default: -1 random)
 	@echo   DEST_ROUTER=N    - Destination router (default: -1 random)
-	@echo   ROUTERS_NUM=N    - Number of routers in NoC (default: 16)
 	@echo   STRESS_MODE=N    - Stress mode (default: 0)
 	@echo ==========================================
 	@echo NoC parameters (TARGET=noc):

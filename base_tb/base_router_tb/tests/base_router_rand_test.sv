@@ -1,9 +1,9 @@
-class base_router_sample_sequence #(parameter DATA_WIDTH = 32, NUM_PORTS=4) extends uvm_sequence;
-  `uvm_object_utils (base_router_sample_sequence#(DATA_WIDTH, NUM_PORTS))
+class base_router_rand_sequence #(parameter DATA_WIDTH = 32, NUM_PORTS=4) extends uvm_sequence;
+  `uvm_object_utils (base_router_rand_sequence#(DATA_WIDTH, NUM_PORTS))
   
   base_router_config base_cfg;
 
-  function new (string name = "base_router_sample_sequence");
+  function new (string name = "base_router_rand_sequence");
     super.new (name);
     if(!uvm_config_db#(base_router_config)::get(null, "", "base_cfg", base_cfg)) `uvm_fatal("CONFIG", "Component was not properly configured");;
   endfunction
@@ -33,10 +33,10 @@ class base_router_sample_sequence #(parameter DATA_WIDTH = 32, NUM_PORTS=4) exte
   endtask
 endclass
 
-class base_router_sample_test #(parameter DATA_WIDTH = 32, NUM_PORTS=4) extends uvm_test;
-  `uvm_component_utils(base_router_sample_test#(DATA_WIDTH, NUM_PORTS))
+class base_router_rand_test #(parameter DATA_WIDTH = 32, NUM_PORTS=4) extends uvm_test;
+  `uvm_component_utils(base_router_rand_test#(DATA_WIDTH, NUM_PORTS))
   base_router_env #(DATA_WIDTH, NUM_PORTS) env;
-  function new(string name = "base_router_sample_test", uvm_component parent=null);
+  function new(string name = "base_router_rand_test", uvm_component parent=null);
     super.new(name, parent);
   endfunction
 
@@ -46,7 +46,7 @@ class base_router_sample_test #(parameter DATA_WIDTH = 32, NUM_PORTS=4) extends 
   endfunction
 
   task run_phase(uvm_phase phase);
-    base_router_sample_sequence#(DATA_WIDTH, NUM_PORTS) seq = base_router_sample_sequence#(DATA_WIDTH, NUM_PORTS)::type_id::create("seq");
+    base_router_rand_sequence#(DATA_WIDTH, NUM_PORTS) seq = base_router_rand_sequence#(DATA_WIDTH, NUM_PORTS)::type_id::create("seq");
     phase.raise_objection(this);
     seq.start(env.agent.sequencer);
     phase.drop_objection(this);

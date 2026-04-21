@@ -11,5 +11,5 @@ package base_router_pkg;
     `include "lib/base_router_coverage.sv"
     `include "lib/base_router_env.sv"
 
-    `include "tests/base_router_sample_test.sv"
+    `include "tests/base_router_rand_test.sv"
 endpackage

@@ -1,5 +1,5 @@
-class old_router_sample_test extends base_router_sample_test#(`PL-2*`CS-1, `REN);
-    `uvm_component_utils(old_router_sample_test)
+class old_router_rand_test extends base_router_rand_test#(`PL-2*`CS-1, `REN);
+    `uvm_component_utils(old_router_rand_test)
     function new(string name, uvm_component parent=null);
         super.new(name, parent);
     endfunction

@@ -7,5 +7,5 @@ package old_noc_pkg;
     `include "lib/old_noc_monitor.sv"
     `include "lib/old_noc_driver.sv"
 
-    `include "tests/old_noc_sample_test.sv"
+    `include "tests/old_noc_rand_test.sv"
 endpackage

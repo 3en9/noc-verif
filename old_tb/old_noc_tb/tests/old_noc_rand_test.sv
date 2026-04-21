@@ -1,5 +1,5 @@
-class old_noc_sample_test extends base_noc_sample_test#(`PL-2*`CS-1, `RN);
-    `uvm_component_utils(old_noc_sample_test)
+class old_noc_rand_test extends base_noc_rand_test#(`PL-2*`CS-1, `RN);
+    `uvm_component_utils(old_noc_rand_test)
     function new(string name, uvm_component parent=null);
         super.new(name, parent);
     endfunction

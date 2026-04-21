@@ -1,9 +1,9 @@
-class base_noc_sample_sequence #(parameter DATA_WIDTH = 32, ROUTERS_NUM=16) extends uvm_sequence;
-  `uvm_object_utils (base_noc_sample_sequence#(DATA_WIDTH, ROUTERS_NUM))
+class base_noc_rand_sequence #(parameter DATA_WIDTH = 32, ROUTERS_NUM=16) extends uvm_sequence;
+  `uvm_object_utils (base_noc_rand_sequence#(DATA_WIDTH, ROUTERS_NUM))
   
   base_noc_config base_cfg;
 
-  function new (string name = "base_noc_sample_sequence");
+  function new (string name = "base_noc_rand_sequence");
     super.new (name);
     if(!uvm_config_db#(base_noc_config)::get(null, "", "base_cfg", base_cfg)) `uvm_fatal("CONFIG", "Component was not properly configured");;
   endfunction
@@ -33,13 +33,13 @@ class base_noc_sample_sequence #(parameter DATA_WIDTH = 32, ROUTERS_NUM=16) exte
   endtask
 endclass
 
-class base_noc_sample_test #(parameter DATA_WIDTH = 32, ROUTERS_NUM=16) extends uvm_test;
-  `uvm_component_utils(base_noc_sample_test#(DATA_WIDTH, ROUTERS_NUM))
+class base_noc_rand_test #(parameter DATA_WIDTH = 32, ROUTERS_NUM=16) extends uvm_test;
+  `uvm_component_utils(base_noc_rand_test#(DATA_WIDTH, ROUTERS_NUM))
   
   base_noc_env #(DATA_WIDTH, ROUTERS_NUM) env;
   base_noc_config base_cfg;
 
-  function new(string name = "base_noc_sample_test", uvm_component parent=null);
+  function new(string name = "base_noc_rand_test", uvm_component parent=null);
     super.new(name, parent);
     if(!uvm_config_db#(base_noc_config)::get(null, "", "base_cfg", base_cfg)) `uvm_fatal("CONFIG", "Component was not properly configured");;
   endfunction
@@ -57,7 +57,7 @@ class base_noc_sample_test #(parameter DATA_WIDTH = 32, ROUTERS_NUM=16) extends 
 
   task run_phase(uvm_phase phase);
     if (base_cfg.agent_mode == UVM_ACTIVE) begin
-      base_noc_sample_sequence#(DATA_WIDTH, ROUTERS_NUM) seq = base_noc_sample_sequence#(DATA_WIDTH, ROUTERS_NUM)::type_id::create("seq");
+      base_noc_rand_sequence#(DATA_WIDTH, ROUTERS_NUM) seq = base_noc_rand_sequence#(DATA_WIDTH, ROUTERS_NUM)::type_id::create("seq");
       phase.raise_objection(this);
       seq.start(env.agent.sequencer);
       phase.drop_objection(this);
