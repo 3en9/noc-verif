@@ -6,3 +6,4 @@ noc_work
 transcript
 *.wlf
 modelsim.ini
+old_tb/Makefile
