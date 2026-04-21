@@ -11,10 +11,9 @@ else
     CREATE_DIR = mkdir -p $1
 endif
 
-SIMULATOR_PATH ?= C:/modeltech64_10.4c
-UVM_HOME = $(SIMULATOR_PATH)/verilog_src/uvm-1.2
-UVM_DPI = $(SIMULATOR_PATH)/uvm-1.2/win64/uvm_dpi
-UVM_SRC  = $(UVM_HOME)/src
+#-----------------------------------------------------------------------------
+# Verification parameters
+#-----------------------------------------------------------------------------
 
 RTL ?= /
 BASE_ROUTER_TB = ../base_tb/base_router_tb
@@ -23,38 +22,20 @@ ROUTER_TB = old_router_tb
 NOC_TB = old_noc_tb
 
 #-----------------------------------------------------------------------------
-# Coverage settings
-#-----------------------------------------------------------------------------
-COVERAGE ?= 0
-COVERAGE_TYPES = bcestf
-COV_DB = coverage_db
-COVERAGE_FILE = $(COV_DB)/cov.ucdb
-COVERAGE_REPORT_FILE = $(COV_DB)/cov_report.txt
-COVERAGE_HTML_DIR = $(COV_DB)/html
-
-ifeq ($(COVERAGE),1)
-    VLOG_COVERAGE_FLAGS = -cover $(COVERAGE_TYPES)
-    VSIM_COVERAGE_FLAGS = -coverage
-    POST_SIM_CMD = -do "coverage save -onexit $(COVERAGE_FILE); log -r /*; run -all; quit"
-else
-    VLOG_COVERAGE_FLAGS =
-    VSIM_COVERAGE_FLAGS =
-    POST_SIM_CMD = -do "log -r /*; run -all; quit"
-endif
-
-#-----------------------------------------------------------------------------
 # Defines
 #-----------------------------------------------------------------------------
-TOPOLOGY = MESH_TORUS
-PL = 32
-CS = 2
-REN = 5
-X = 4
-Y = 4
-RN = 16
+TOPOLOGY ?= MESH_TORUS
+PL ?= 32
+CS ?= 2
+REN ?= 5
+X ?= 4
+Y ?= 4
+RN ?= 16
 
 MASTER_ROUTER_F ?= 0
 MASTER_ROUTER_S ?= 0
+
+DEFINES = +define+PL=$(PL) +define+CS=$(CS) +define+REN=$(REN) +define+RN=$(RN) +define+$(TOPOLOGY) +define+X=$(X) +define+Y=$(Y) +define+MASTER_ROUTER_F=$(MASTER_ROUTER_F) +define+MASTER_ROUTER_S=$(MASTER_ROUTER_S)
 
 #-----------------------------------------------------------------------------
 # Target selection (router or noc)
@@ -69,6 +50,9 @@ ifeq ($(TARGET),router)
     DEST_ROUTER ?= -1
     RAND_READY ?= 100
     STRESS_MODE ?= 0
+	COMP_ARGS = -sv $(DEFINES) +incdir+$(CHILD_TB) $(CHILD_TB)/old_router_package.sv $(CHILD_TB)/tb_top.sv
+	TOP_LEVEL = tb_top
+	COV_INST_NAME = dut
     SIM_ARGS = +UVM_TESTNAME=$(TEST) \
                +ROUTERS_NUM=$(RN) \
                +PACKETS_COUNT=$(PACKETS_COUNT) \
@@ -85,6 +69,9 @@ else
     DEST_ROUTER ?= -1
     STRESS_MODE ?= 0
     AGENT_ACTIVE ?= 1
+	COMP_ARGS = -sv $(DEFINES) +incdir+$(CHILD_TB) $(CHILD_TB)/old_noc_package.sv $(CHILD_TB)/tb_top.sv
+	TOP_LEVEL = tb_top
+	COV_INST_NAME = dut
     SIM_ARGS = +UVM_TESTNAME=$(TEST) \
                +PACKETS_COUNT=$(PACKETS_COUNT) \
                +RAND_READY=$(RAND_READY) \
@@ -94,43 +81,49 @@ else
 endif
 
 #-----------------------------------------------------------------------------
+# Coverage settings
+#-----------------------------------------------------------------------------
+COVERAGE ?= 0
+COVERAGE_TYPES = bcest
+COV_DB = coverage_db
+COVERAGE_FILE = $(COV_DB)/cov.ucdb
+COVERAGE_REPORT_FILE = $(COV_DB)/cov_report.txt
+COVERAGE_HTML_DIR = $(COV_DB)/html
+
+ifeq ($(COVERAGE),1)
+    VLOG_COVERAGE_FLAGS = -cover $(COVERAGE_TYPES) -covercells
+    VSIM_COVERAGE_FLAGS = -coverage
+    POST_SIM_CMD = -do "coverage save -onexit $(COVERAGE_FILE); log -r /*; run -all; quit"
+else
+    VLOG_COVERAGE_FLAGS =
+    VSIM_COVERAGE_FLAGS =
+    POST_SIM_CMD = -do "log -r /*; run -all; quit"
+endif
+
+#-----------------------------------------------------------------------------
 # Targets
 #-----------------------------------------------------------------------------
 init:
 	$(call CREATE_DIR,$(COV_DB))
 	vlib work
 	vmap work work
-	vlog -sv +incdir+$(UVM_SRC) $(UVM_SRC)/uvm_pkg.sv
 
 rtl_compile: init
-ifeq ($(TARGET),router)
-	vlog -sv $(VLOG_COVERAGE_FLAGS) +incdir+$(RTL) $(RTL)/inc/*.svh $(RTL)/src/router.sv
-else
-	vlog -sv $(VLOG_COVERAGE_FLAGS) +incdir+$(RTL) $(RTL)/inc/*.svh $(RTL)/noc/noc.sv
-endif
+	vlog -sv $(VLOG_COVERAGE_FLAGS) +incdir+$(RTL) $(RTL)/inc/*.svh $(RTL)/src/*.sv $(RTL)/noc/*.sv
 
 base_tb_compile: rtl_compile
-	vlog -sv +incdir+$(UVM_SRC) +incdir+$(BASE_ROUTER_TB) $(BASE_ROUTER_TB)/base_router_package.sv
-ifeq ($(TARGET),noc)
-	vlog -sv +incdir+$(UVM_SRC) +incdir+$(BASE_NOC_TB) $(BASE_NOC_TB)/base_noc_package.sv
-endif
+	vlog -sv +incdir+$(BASE_ROUTER_TB) +incdir+$(BASE_NOC_TB) $(BASE_ROUTER_TB)/base_router_package.sv $(BASE_NOC_TB)/base_noc_package.sv
 
 tb_compile: base_tb_compile
-ifeq ($(TARGET),router)
-	vlog -sv +incdir+$(UVM_SRC) +incdir+$(CHILD_TB) $(CHILD_TB)/old_router_package.sv +define+PL=$(PL) +define+CS=$(CS) +define+REN=$(REN) +define+$(TOPOLOGY) +define+X=$(X) +define+Y=$(Y)
-	vlog -sv $(CHILD_TB)/tb_top.sv +define+$(TOPOLOGY) +define+X=$(X) +define+Y=$(Y) +define+CS=$(CS) +define+MASTER_ROUTER_F=$(MASTER_ROUTER_F) +define+MASTER_ROUTER_S=$(MASTER_ROUTER_S)
-else
-	vlog -sv +incdir+$(UVM_SRC) +incdir+$(CHILD_TB) $(CHILD_TB)/old_noc_package.sv +define+PL=$(PL) +define+CS=$(CS) +define+REN=$(REN) +define+$(TOPOLOGY) +define+X=$(X) +define+Y=$(Y) +define+RN=$(RN)
-	vlog -sv $(CHILD_TB)/tb_top.sv
-endif
+	vlog -sv $(COMP_ARGS)
 
 sim: tb_compile
-	vsim -sv_lib $(UVM_DPI) -novopt $(VSIM_COVERAGE_FLAGS) -c $(POST_SIM_CMD) tb_top $(SIM_ARGS)
+	vsim -novopt $(VSIM_COVERAGE_FLAGS) -c $(POST_SIM_CMD) $(TOP_LEVEL) $(SIM_ARGS)
 
 clean:
-	$(RM) modelsim.ini tr_db.log transcript vsim.wlf
-	$(RMDIR) work
-	$(RMDIR) $(COV_DB)
+	-$(RM) modelsim.ini tr_db.log transcript vsim.wlf
+	-$(RMDIR) work 
+	-$(RMDIR) $(COV_DB)
 
 view_cov:
 	vsim -viewcov $(COVERAGE_FILE)
@@ -142,7 +135,7 @@ cov_html_report:
 	vsim -c -do "coverage report -html -htmldir $(COVERAGE_HTML_DIR) -code $(COVERAGE_TYPES); quit" -viewcov $(COVERAGE_FILE)
 
 view_wave:
-	vsim -view vsim.wlf -do "add wave -r /tb_top/dut/*"
+	vsim -view vsim.wlf -do "add wave -r /$(TOP_LEVEL)/$(COV_INST_NAME)/*"
 
 help:
 	@echo ==========================================

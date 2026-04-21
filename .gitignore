@@ -1,5 +1,7 @@
 coverage_db
 work
+router_work
+noc_work
 *.log
 transcript
 *.wlf
